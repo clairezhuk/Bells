@@ -9,15 +9,14 @@ SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 FPS = 60
 
-# TIME_UNIT and REACTION_TOLERANCE are removed
-WIN_COUNT = 24 # Total unique combinations to win
+# 4! (4*3*2*1) = 24. This is the max possible permutations.
+WIN_COUNT = 24 
 
 # Colors
 COLOR_WHITE = (255, 255, 255)
 COLOR_BLACK = (0, 0, 0)
 COLOR_GREY = (50, 50, 50)
 COLOR_DARK_GREY = (30, 30, 30)
-# CUE colors are removed
 
 COLORS = [
     (255, 0, 0),  # Red
@@ -65,17 +64,13 @@ font = pygame.font.Font(None, 74)
 small_font = pygame.font.Font(None, 50)
 
 # Game state variables
-game_state = "playing" # "playing", "win", "lose_locked", "lose_repeat"
+# Added 'lose_internal_repeat'
+game_state = "playing" 
 successful_combinations = set()
 current_combination = []
 
-# Cue state (REMOVED)
-
 # Key state
-# Tracks how many *other* keys were pressed since this key was pressed.
 key_lock_status = {key: 2 for key in KEYS} 
-
-# Timers (REMOVED)
 
 running = True
 while running:
@@ -84,8 +79,6 @@ while running:
         if event.type == pygame.QUIT:
             running = False
         
-        # --- CUE TIMER (REMOVED) ---
-
         # --- KEY PRESS ---
         if event.type == pygame.KEYDOWN and game_state == "playing":
             if event.key in KEYS:
@@ -96,27 +89,31 @@ while running:
                 if key_lock_status[pressed_key] < 2:
                     game_state = "lose_locked"
                     continue 
+                
+                # 2. NEW: Check for internal repeat in the current combo
+                if key_index in current_combination:
+                    game_state = "lose_internal_repeat"
+                    continue
 
                 # --- Key press is valid, process it ---
 
-                # 2. Play sound
+                # 3. Play sound
                 SOUNDS[key_index].play()
                 
-                # 3. Update lock states
+                # 4. Update lock states
                 key_lock_status[pressed_key] = 0 # Lock this key
-                # Increment all *other* keys
                 for key in KEYS:
                     if key != pressed_key:
                         key_lock_status[key] += 1
 
-                # 4. Add to current combination
+                # 5. Add to current combination
                 current_combination.append(key_index)
 
-                # 5. Check if combination is complete
+                # 6. Check if combination is complete
                 if len(current_combination) == 4:
                     combo_tuple = tuple(current_combination)
                     
-                    # Check for repeat
+                    # Check for repeat (of a full combo)
                     if combo_tuple in successful_combinations:
                         game_state = "lose_repeat"
                     else:
@@ -131,8 +128,6 @@ while running:
     # --- Drawing ---
     screen.fill(COLOR_BLACK)
 
-    # --- Draw CUE Indicator (REMOVED) ---
-
     # --- Draw Key Boxes (showing lock state) ---
     box_size = 150
     padding = 20
@@ -143,13 +138,8 @@ while running:
     for i in range(4):
         current_key = KEYS[i]
         rect = pygame.Rect(start_x + i * (box_size + padding), y_pos, box_size, box_size)
-        
-        # Check if the key is locked (count < 2)
         is_locked = key_lock_status[current_key] < 2
-        
-        # Key lights up if locked
         color = HIGHLIGHT_COLORS[i] if is_locked else COLOR_DARK_GREY
-
         pygame.draw.rect(screen, color, rect)
         
         key_text_color = COLOR_BLACK if is_locked else COLOR_GREY
@@ -177,6 +167,10 @@ while running:
         screen.blit(lose_text, text_rect)
     elif game_state == "lose_repeat":
         lose_text = font.render("GAME OVER (REPEATED COMBO)", True, (255, 100, 0))
+        text_rect = lose_text.get_rect(center=(SCREEN_WIDTH // 2, 100))
+        screen.blit(lose_text, text_rect)
+    elif game_state == "lose_internal_repeat":
+        lose_text = font.render("GAME OVER (INTERNAL REPEAT)", True, (255, 100, 100))
         text_rect = lose_text.get_rect(center=(SCREEN_WIDTH // 2, 100))
         screen.blit(lose_text, text_rect)
 
