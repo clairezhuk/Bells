@@ -11,7 +11,7 @@ FPS = 60
 
 TIME_UNIT = 1000  # ms (1 second)
 REACTION_TOLERANCE = 850  # ms (Reaction window after cue)
-SPAM_THRESHOLD = 2.5 * TIME_UNIT # ms
+# SPAM_THRESHOLD is no longer needed
 WIN_COUNT = 24
 
 # Colors
@@ -28,7 +28,6 @@ COLORS = [
     (0, 0, 255),  # Blue
     (255, 255, 0) # Yellow
 ]
-# These colors are now used for the SPAM cooldown
 HIGHLIGHT_COLORS = COLORS 
 
 # Keys
@@ -78,7 +77,9 @@ cue_time_start = pygame.time.get_ticks()
 hit_this_cue = False # Has the user hit a key for the current cue?
 
 # Key state
-last_press_times = {key: -SPAM_THRESHOLD for key in KEYS} # Init timers to be ready
+# NEW: Tracks how many *other* keys were pressed since this key was pressed.
+# All start at 2 (unlocked).
+key_lock_status = {key: 2 for key in KEYS} 
 
 # Timers
 NEXT_CUE_EVENT = pygame.USEREVENT + 1
@@ -114,20 +115,25 @@ while running:
         # --- KEY PRESS ---
         if event.type == pygame.KEYDOWN and game_state == "playing":
             if event.key in KEYS:
-                key_index = KEY_MAP[event.key]
+                pressed_key = event.key
+                key_index = KEY_MAP[pressed_key]
                 
-                # 1. Check for spam
-                if current_time - last_press_times[event.key] < SPAM_THRESHOLD:
+                # 1. NEW Check for lock
+                if key_lock_status[pressed_key] < 2:
                     game_state = "lose"
                     continue # Stop processing this key press
 
                 # 2. Play sound
                 SOUNDS[key_index].play()
                 
-                # 3. Update press time *after* spam check
-                last_press_times[event.key] = current_time
+                # 3. NEW Update lock states
+                key_lock_status[pressed_key] = 0 # Lock this key
+                # Increment all *other* keys
+                for key in KEYS:
+                    if key != pressed_key:
+                        key_lock_status[key] += 1
 
-                # 4. Check for cue hit
+                # 4. Check for cue hit (logic remains the same)
                 reaction_time = current_time - cue_time_start
                 if (not hit_this_cue and 
                     0 < reaction_time < REACTION_TOLERANCE):
@@ -151,7 +157,7 @@ while running:
     pygame.draw.rect(screen, cue_color, cue_rect, border_radius=10)
 
 
-    # --- Draw Key Boxes (showing cooldown) ---
+    # --- Draw Key Boxes (showing NEW lock state) ---
     box_size = 150
     padding = 20
     total_width = (box_size + padding) * 4 - padding
@@ -159,19 +165,19 @@ while running:
     y_pos = (SCREEN_HEIGHT - box_size) // 2
 
     for i in range(4):
+        current_key = KEYS[i]
         rect = pygame.Rect(start_x + i * (box_size + padding), y_pos, box_size, box_size)
         
-        # Check if the key is on spam cooldown
-        time_since_last_press = current_time - last_press_times[KEYS[i]]
-        is_on_cooldown = time_since_last_press < SPAM_THRESHOLD
+        # Check if the key is locked (count < 2)
+        is_locked = key_lock_status[current_key] < 2
         
-        # Key lights up if on cooldown
-        color = HIGHLIGHT_COLORS[i] if is_on_cooldown else COLOR_DARK_GREY
+        # Key lights up if locked
+        color = HIGHLIGHT_COLORS[i] if is_locked else COLOR_DARK_GREY
 
         pygame.draw.rect(screen, color, rect)
         
-        key_text_color = COLOR_BLACK if is_on_cooldown else COLOR_GREY
-        key_text = small_font.render(chr(KEYS[i]).upper(), True, key_text_color)
+        key_text_color = COLOR_BLACK if is_locked else COLOR_GREY
+        key_text = small_font.render(chr(current_key).upper(), True, key_text_color)
         text_rect = key_text.get_rect(center=rect.center)
         screen.blit(key_text, text_rect)
 
@@ -185,7 +191,8 @@ while running:
         text_rect = win_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 100))
         screen.blit(win_text, text_rect)
     elif game_state == "lose":
-        lose_text = font.render("GAME OVER (SPAM)", True, (255, 0, 0))
+        # Updated message for the new lose condition
+        lose_text = font.render("GAME OVER (KEY LOCKED)", True, (255, 0, 0))
         text_rect = lose_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 100))
         screen.blit(lose_text, text_rect)
 
