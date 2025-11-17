@@ -1,0 +1,106 @@
+/* Базові стилі, що імітують екран Pygame */
+body {
+    background-color: #000000; /* COLOR_BLACK */
+    color: #FFFFFF; /* COLOR_WHITE */
+    font-family: 'Comic Sans MS', 'Arial', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    overflow: hidden;
+}
+
+#game-container {
+    width: 800px;
+    height: 600px;
+    border: 1px solid #333; /* Для візуалізації меж */
+    padding: 20px;
+    box-sizing: border-box; /* Включає padding у розміри */
+    display: flex;
+    flex-direction: column;
+}
+
+/* --- Верхня панель (Рахунок, Комбо) --- */
+#header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 40px; /* small_font */
+    color: #FFFFFF;
+}
+
+/* --- Повідомлення (Виграш/Програш) --- */
+#message-display {
+    height: 80px; /* Зарезервоване місце для тексту */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 60px; /* font */
+    margin-top: 15px; /* (100px - 80px/2) - відступ Pygame */
+}
+
+/* --- Клавіші (Дзвони) --- */
+#key-container {
+    display: flex;
+    justify-content: center;
+    gap: 20px; /* padding */
+    margin-top: 60px; /* Y-pos: (600 - 150) / 2 = 225. 225 - 80(msg) - 50(header) = 95 */
+}
+
+.key-box {
+    width: 150px;
+    height: 150px;
+    background-color: #1e1e1e; /* COLOR_DARK_GREY */
+    color: #323232; /* COLOR_GREY */
+    
+    /* Центрування тексту (A, S, D, F) */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 50px;
+    font-weight: bold;
+    user-select: none; /* Заборона виділення тексту */
+    transition: background-color 0.1s, color 0.1s;
+}
+
+/* --- Стани блокування (HIGHLIGHT_COLORS) --- */
+.key-box.locked[data-key="a"] {
+    background-color: #FF0000; /* Red */
+    color: #000000;
+}
+.key-box.locked[data-key="s"] {
+    background-color: #00FF00; /* Green */
+    color: #000000;
+}
+.key-box.locked[data-key="d"] {
+    background-color: #0000FF; /* Blue */
+    color: #000000;
+}
+.key-box.locked[data-key="f"] {
+    background-color: #FFFF00; /* Yellow */
+    color: #000000;
+}
+
+/* --- Кнопка "Ще раз" --- */
+#restart-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 100px; /* Y-pos: 425 - 225(key-y) - 150(key-h) = 50. Плюс gap */
+}
+
+#restart-button {
+    width: 400px;
+    height: 65px;
+    background-color: #46465A; /* COLOR_BUTTON */
+    color: #DCE0FF; /* COLOR_BUTTON_TEXT */
+    font-family: 'Comic Sans MS', 'Arial', sans-serif;
+    font-size: 30px; /* Трохи менше, бо текст довший */
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+/* Допоміжний клас для приховування */
+.hidden {
+    visibility: hidden;
+}

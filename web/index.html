@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Гра Дзвонів</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+        <div id="header">
+            <div id="score-display">Мелодії: 0 / 24</div>
+            <div id="combo-display">Комбо: 0 / 4</div>
+        </div>
+
+        <div id="message-display"></div>
+
+        <div id="key-container">
+            <div classid="key-box" id="key-a" data-key="a">A</div>
+            <div class="key-box" id="key-s" data-key="s">S</div>
+            <div class="key-box" id="key-d" data-key="d">D</div>
+            <div class="key-box" id="key-f" data-key="f">F</div>
+        </div>
+
+        <div id="restart-container">
+            <button id="restart-button" class="hidden">Спробувати ще раз</button>
+        </div>
+    </div>
+
+    <audio id="sound-a" src="../sounds/зв1.mp3" preload="auto"></audio>
+    <audio id="sound-s" src="../sounds/зв2.mp3" preload="auto"></audio>
+    <audio id="sound-d" src="../sounds/зв3.mp3" preload="auto"></audio>
+    <audio id="sound-f" src="../sounds/зв4.mp3" preload="auto"></audio>
+
+    <script src="script.js"></script>
+</body>
+</html>
