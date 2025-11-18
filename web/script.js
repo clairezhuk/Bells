@@ -1,7 +1,5 @@
 // --- Constants ---
 const WIN_COUNT = 24;
-
-// Карта відповідності клавіш (e.key) до їх ID елементів
 const KEY_MAP = {
     'a': { id: 'key-a', soundId: 'sound-a' },
     's': { id: 'key-s', soundId: 'sound-s' },
@@ -9,8 +7,6 @@ const KEY_MAP = {
     'f': { id: 'key-f', soundId: 'sound-f' }
 };
 const KEYS = ['a', 's', 'd', 'f'];
-
-// Карта повідомлень про стан гри
 const GAME_MESSAGES = {
     'win': { text: "ПЕРЕМОГА!", color: "#00FF00" },
     'lose_locked': { text: "ДЗВІН ЩЕ ЗВУЧИТЬ!", color: "#FF0000" },
@@ -36,16 +32,25 @@ const sounds = {
     'f': document.getElementById('sound-f')
 };
 
+// --- Нові DOM елементи для модального вікна ---
+const modalOverlay = document.getElementById('modal-overlay');
+const permissionBox = document.getElementById('permission-box');
+const loadingBox = document.getElementById('loading-box');
+const btnSoundYes = document.getElementById('btn-sound-yes');
+const btnSoundNo = document.getElementById('btn-sound-no');
+
 // --- Game State Variables ---
-let gameState;
+let gameState = "loading"; // Гра починається в стані "завантаження"
 let successfulCombinations;
 let currentCombination;
 let keyLockStatus;
+let useSound = false; // Звук вимкнено за замовчуванням
 
 // --- Game Functions ---
 
 /**
  * Скидає гру до початкового стану.
+ * Тепер це лише логіка, UI оновлюється окремо.
  */
 function reset_game() {
     console.log("--- Гру перезапущено ---");
@@ -56,6 +61,9 @@ function reset_game() {
     
     // Оновлюємо UI
     updateUI();
+    // Переконуємось, що повідомлення про програш чисті
+    messageDisplay.textContent = "";
+    restartButton.classList.add('hidden');
 }
 
 /**
@@ -66,7 +74,7 @@ function updateUI() {
     scoreDisplay.textContent = `Мелодії: ${successfulCombinations.size} / ${WIN_COUNT}`;
     comboDisplay.textContent = `Комбо: ${currentCombination.length} / 4`;
 
-    // 2. Оновити вигляд клавіш (заблоковано/розблоковано)
+    // 2. Оновити вигляд клавіш
     for (const key of KEYS) {
         const isLocked = keyLockStatus[key] < 2;
         const keyElement = keyBoxes[key];
@@ -89,7 +97,6 @@ function updateUI() {
             messageDisplay.style.color = message.color;
         }
         
-        // Показати кнопку "Ще раз" при будь-якому програші
         if (gameState.startsWith("lose")) {
             restartButton.classList.remove('hidden');
         }
@@ -97,14 +104,73 @@ function updateUI() {
 }
 
 /**
- * Програє звук. Дозволяє накладання.
+ * Програє звук. Тепер з перевіркою useSound.
  */
 function playSound(key) {
-    const sound = sounds[key];
-    if (sound) {
-        sound.currentTime = 0; // Дозволяє повторне швидке натискання
-        sound.play();
+    // ЯКЩО ЗВУК ВИМКНЕНО - НЕ РОБИМО НІЧОГО.
+    if (!useSound) {
+        return; 
     }
+    
+    try {
+        const sound = sounds[key];
+        if (sound) {
+            sound.currentTime = 0; 
+            const playPromise = sound.play();
+            
+            if (playPromise !== undefined) {
+                playPromise.catch(error => {
+                    console.warn(`Асинхронна помилка відтворення ${key} (проігноровано):`, error);
+                });
+            }
+        }
+    } catch (error) {
+        console.error(`Синхронна помилка при спробі відтворення ${key} (проігноровано):`, error);
+    }
+}
+
+/**
+ * НОВА ФУНКЦІЯ: Примусове завантаження всіх звуків.
+ */
+function preloadSounds() {
+    console.log("Початок завантаження звуків...");
+    permissionBox.classList.add('hidden');
+    loadingBox.classList.remove('hidden');
+    
+    const soundPromises = KEYS.map(key => {
+        return new Promise((resolve, reject) => {
+            const audio = sounds[key];
+            
+            // Якщо звук вже готовий (з кешу)
+            if (audio.readyState >= 4) { // HAVE_ENOUGH_DATA
+                resolve(key);
+                return;
+            }
+            
+            // Додаємо слухачів
+            audio.addEventListener('canplaythrough', () => resolve(key), { once: true });
+            audio.addEventListener('error', () => reject(key), { once: true });
+            
+            // Примусово запускаємо завантаження
+            audio.load();
+        });
+    });
+    
+    Promise.all(soundPromises)
+        .then(() => {
+            // ВСЕ ДОБРЕ
+            console.log("Всі звуки успішно завантажено!");
+            modalOverlay.classList.add('hidden'); // Ховаємо модальне вікно
+            reset_game(); // Запускаємо гру
+        })
+        .catch((failedKey) => {
+            // ПОМИЛКА ЗАВАНТАЖЕННЯ
+            console.error(`Не вдалося завантажити ${failedKey}. Запуск без звуку.`);
+            alert(`Помилка завантаження звуку ${failedKey}. Гра запуститься без звуку.`);
+            useSound = false; // Вимикаємо звук
+            modalOverlay.classList.add('hidden');
+            reset_game();
+        });
 }
 
 /**
@@ -113,7 +179,6 @@ function playSound(key) {
 function handleKeyPress(event) {
     const key = event.key.toLowerCase();
     
-    // Перевіряємо, чи це одна з наших ігрових клавіш
     if (!KEYS.includes(key)) {
         return;
     }
@@ -123,10 +188,12 @@ function handleKeyPress(event) {
         return;
     }
     
+    // --- Помилки тут бути не може ---
+    
     // 1. Перевірка блокування (Key Locked)
     if (keyLockStatus[key] < 2) {
         gameState = "lose_locked";
-        playSound(key); // Все одно граємо звук, але фіксуємо програш
+        playSound(key); // Граємо звук програшу
         updateUI();
         return;
     }
@@ -140,6 +207,7 @@ function handleKeyPress(event) {
     }
 
     // --- Натискання валідне ---
+    // (Код звідси 100% виконається, бо playSound() тепер безпечний)
 
     // 3. Граємо звук
     playSound(key);
@@ -159,15 +227,12 @@ function handleKeyPress(event) {
     if (currentCombination.length === 4) {
         const comboString = currentCombination.join('');
         
-        // Перевірка на повний повтор комбо
         if (successfulCombinations.has(comboString)) {
             gameState = "lose_repeat";
         } else {
-            // Успіх!
             successfulCombinations.add(comboString);
             currentCombination = [];
             
-            // Перевірка на перемогу
             if (successfulCombinations.size >= WIN_COUNT) {
                 gameState = "win";
             }
@@ -178,10 +243,26 @@ function handleKeyPress(event) {
     updateUI();
 }
 
-// --- Event Listeners ---
+// --- Event Listeners (ПОВНІСТЮ ЗМІНЕНО) ---
 
-// Запускаємо гру, коли сторінка завантажилась
-document.addEventListener('DOMContentLoaded', reset_game);
+// НЕ запускаємо гру одразу, а чекаємо на рішення користувача
+document.addEventListener('DOMContentLoaded', () => {
+    // Показати модальне вікно (воно не приховане за замовчуванням)
+    gameState = "loading";
+});
+
+// Слухач для кнопки "ТАК"
+btnSoundYes.addEventListener('click', () => {
+    useSound = true;
+    preloadSounds(); // Починаємо завантаження
+});
+
+// Слухач для кнопки "НІ"
+btnSoundNo.addEventListener('click', () => {
+    useSound = false;
+    modalOverlay.classList.add('hidden'); // Ховаємо вікно
+    reset_game(); // Негайно починаємо гру
+});
 
 // Слухаємо натискання клавіш
 document.addEventListener('keydown', handleKeyPress);

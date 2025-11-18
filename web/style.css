@@ -36,7 +36,7 @@ body {
     justify-content: center;
     align-items: center;
     font-size: 60px; /* font */
-    margin-top: 15px; /* (100px - 80px/2) - відступ Pygame */
+    margin-top: 15px; 
 }
 
 /* --- Клавіші (Дзвони) --- */
@@ -44,7 +44,7 @@ body {
     display: flex;
     justify-content: center;
     gap: 20px; /* padding */
-    margin-top: 60px; /* Y-pos: (600 - 150) / 2 = 225. 225 - 80(msg) - 50(header) = 95 */
+    margin-top: 60px; 
 }
 
 .key-box {
@@ -52,14 +52,12 @@ body {
     height: 150px;
     background-color: #1e1e1e; /* COLOR_DARK_GREY */
     color: #323232; /* COLOR_GREY */
-    
-    /* Центрування тексту (A, S, D, F) */
     display: flex;
     justify-content: center;
     align-items: center;
     font-size: 50px;
     font-weight: bold;
-    user-select: none; /* Заборона виділення тексту */
+    user-select: none; 
     transition: background-color 0.1s, color 0.1s;
 }
 
@@ -85,7 +83,7 @@ body {
 #restart-container {
     display: flex;
     justify-content: center;
-    margin-top: 100px; /* Y-pos: 425 - 225(key-y) - 150(key-h) = 50. Плюс gap */
+    margin-top: 100px; 
 }
 
 #restart-button {
@@ -94,13 +92,64 @@ body {
     background-color: #46465A; /* COLOR_BUTTON */
     color: #DCE0FF; /* COLOR_BUTTON_TEXT */
     font-family: 'Comic Sans MS', 'Arial', sans-serif;
-    font-size: 30px; /* Трохи менше, бо текст довший */
+    font-size: 30px; 
     border: none;
     border-radius: 10px;
     cursor: pointer;
 }
 
+/* --- НОВІ СТИЛІ ДЛЯ МОДАЛЬНОГО ВІКНА --- */
+#modal-overlay {
+    position: fixed; /* Поверх всього */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.85); /* Затемнення */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100; /* Найвищий шар */
+}
+
+#modal-content {
+    width: 800px; /* Такий самий, як гра */
+    text-align: center;
+    color: #FFFFFF;
+}
+
+#modal-content h2 {
+    font-size: 60px;
+    color: #FFFFFF;
+}
+
+#modal-content p {
+    font-size: 24px;
+    color: #DDDDDD;
+}
+
+#modal-content button {
+    width: 300px;
+    height: 65px;
+    font-family: 'Comic Sans MS', 'Arial', sans-serif;
+    font-size: 24px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    margin: 10px;
+}
+
+#btn-sound-yes {
+    background-color: #00FF00; /* Green */
+    color: #000000;
+}
+
+#btn-sound-no {
+    background-color: #FF0000; /* Red */
+    color: #000000;
+}
+
 /* Допоміжний клас для приховування */
 .hidden {
-    visibility: hidden;
+    display: none !important; /* Надійно ховає елемент */
 }
