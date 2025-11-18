@@ -79,6 +79,17 @@ body {
     color: #000000;
 }
 
+.key-box:hover {
+    /* Легке освітлення при наведенні для візуального відгуку */
+    background-color: #383838; /* Трохи світліший за DARK_GREY */
+    cursor: pointer;
+}
+
+/* Прибираємо синій контур, який з'являється при фокусі/кліку на мобільних */
+.key-box:focus {
+    outline: none;
+}
+
 /* --- Кнопка "Ще раз" --- */
 #restart-container {
     display: flex;

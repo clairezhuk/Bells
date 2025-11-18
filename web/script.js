@@ -174,14 +174,17 @@ function preloadSounds() {
 }
 
 /**
- * Обробник натискання клавіш.
+ * Обробник натискання клавіш (внутрішня логіка).
+ * ПРИЙМАЄ ОБ'ЄКТ ПОДІЇ, ЯКИЙ МОЖЕ БУТИ КЛАВІАТУРНИМ АБО СТВОРЕНИМ МИШЕЮ.
  */
 function handleKeyPress(event) {
-    const key = event.key.toLowerCase();
+    const key = event.key.toLowerCase(); // Отримуємо ключ з об'єкта події
     
     if (!KEYS.includes(key)) {
         return;
     }
+    
+    // Решта логіки залишається незмінною...
     
     // Гра працює тільки в стані 'playing'
     if (gameState !== 'playing') {
@@ -189,6 +192,9 @@ function handleKeyPress(event) {
     }
     
     // --- Помилки тут бути не може ---
+    // (Логіка гри, яка залишається незмінною)
+    // ...
+    // ...
     
     // 1. Перевірка блокування (Key Locked)
     if (keyLockStatus[key] < 2) {
@@ -207,8 +213,6 @@ function handleKeyPress(event) {
     }
 
     // --- Натискання валідне ---
-    // (Код звідси 100% виконається, бо playSound() тепер безпечний)
-
     // 3. Граємо звук
     playSound(key);
 
@@ -243,6 +247,18 @@ function handleKeyPress(event) {
     updateUI();
 }
 
+/**
+ * Універсальна функція для обробки натискання (клавіатура або миша).
+ */
+function handleInput(key) {
+    // Створюємо фальшивий об'єкт події, щоб імітувати натискання клавіатури
+    const fakeEvent = {
+        key: key.toLowerCase(),
+        // Ми не використовуємо інші властивості події, тому цього достатньо
+    };
+    handleKeyPress(fakeEvent);
+}
+
 // --- Event Listeners (ПОВНІСТЮ ЗМІНЕНО) ---
 
 // НЕ запускаємо гру одразу, а чекаємо на рішення користувача
@@ -269,3 +285,23 @@ document.addEventListener('keydown', handleKeyPress);
 
 // Слухаємо натискання кнопки "Ще раз"
 restartButton.addEventListener('click', reset_game);
+
+
+// --- НОВИЙ БЛОК: Обробка кліків мишею/тачем ---
+
+// Додаємо слухач подій для кожного key-box
+for (const key of KEYS) {
+    const keyElement = keyBoxes[key];
+    
+    // Використовуємо 'click' для загальної взаємодії (миша/тач)
+    keyElement.addEventListener('click', () => {
+        // Отримуємо значення 'a', 's', 'd', 'f' з атрибута 'data-key'
+        const keyChar = keyElement.getAttribute('data-key');
+        
+        // Створюємо об'єкт події, який очікує handleKeyPress
+        const fakeEvent = { key: keyChar };
+        
+        // Викликаємо основний обробник
+        handleKeyPress(fakeEvent);
+    });
+}
