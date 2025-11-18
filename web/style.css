@@ -13,7 +13,7 @@ body {
 
 #game-container {
     width: 70%;
-    height: 90%px;
+    height: 80%px;
     border: 1px solid #333; /* Для візуалізації меж */
     padding: 20px;
     box-sizing: border-box; /* Включає padding у розміри */
